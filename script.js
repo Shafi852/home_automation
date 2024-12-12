@@ -5,6 +5,12 @@ const deviceControlPage = document.getElementById('deviceControlPage');
 const currentRoomTitle = document.getElementById('currentRoomTitle');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
+const entranceSection = document.getElementById('entranceSection');
+const standardRoomSection = document.getElementById('standardRoomSection');
+const cameraFeed = document.getElementById('cameraFeed');
+const recordingStatusElement = document.getElementById('recordingStatus');
+
+let isRecording = false;
 
 // Login function
 function login() {
@@ -26,10 +32,9 @@ function setupLoginKeyPress() {
     
     loginInputs.forEach(input => {
         input.addEventListener('keypress', function(event) {
-            // Check if the pressed key is Enter (key code 13)
             if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent default form submission
-                login(); // Call login function
+                event.preventDefault();
+                login();
             }
         });
     });
@@ -53,6 +58,10 @@ function logout() {
         button.classList.add('off');
         button.textContent = button.id.toUpperCase();
     });
+
+    // Reset camera
+    isRecording = false;
+    recordingStatusElement.textContent = 'Start Recording';
 }
 
 // Select room function
@@ -60,6 +69,15 @@ function selectRoom(room) {
     currentRoomTitle.textContent = room;
     roomSelectionPage.classList.add('hidden');
     deviceControlPage.classList.remove('hidden');
+
+    // Special handling for Entrance
+    if (room === 'Entrance') {
+        entranceSection.classList.remove('hidden');
+        standardRoomSection.classList.add('hidden');
+    } else {
+        entranceSection.classList.add('hidden');
+        standardRoomSection.classList.remove('hidden');
+    }
 }
 
 // Toggle device function
@@ -70,6 +88,24 @@ function toggleDevice(deviceId) {
     device.textContent = device.classList.contains('on') ? 
         `${deviceId.toUpperCase()} ON` : 
         `${deviceId.toUpperCase()} OFF`;
+}
+
+// Toggle camera recording
+function toggleCameraRecording() {
+    isRecording = !isRecording;
+    if (isRecording) {
+        recordingStatusElement.textContent = 'Stop Recording';
+        recordingStatusElement.parentElement.classList.add('on');
+    } else {
+        recordingStatusElement.textContent = 'Start Recording';
+        recordingStatusElement.parentElement.classList.remove('on');
+    }
+}
+
+// Capture snapshot
+function captureSnapshot() {
+    alert('Snapshot captured and saved!');
+    // In a real implementation, this would send the current camera feed to storage
 }
 
 // Go back to rooms function

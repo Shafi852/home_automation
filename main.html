@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home Controller</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="loginPage" class="container">
         <h2>Smart Home Login</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
         <button onclick="login()">Login</button>
     </div>
 
@@ -20,18 +21,36 @@
             <button class="room-button" onclick="selectRoom('Bedroom')">Bedroom</button>
             <button class="room-button" onclick="selectRoom('Kitchen')">Kitchen</button>
             <button class="room-button" onclick="selectRoom('Bathroom')">Bathroom</button>
+            <button class="room-button" onclick="selectRoom('Entrance')">Entrance</button>
         </div>
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <div id="deviceControlPage" class="container hidden">
         <h2 id="currentRoomTitle"></h2>
-        <div class="room-grid">
-            <button class="device-button" id="light" onclick="toggleDevice('light')">Light</button>
-            <button class="device-button" id="fan" onclick="toggleDevice('fan')">Fan</button>
-            <button class="device-button" id="ac" onclick="toggleDevice('ac')">AC</button>
-            <button class="device-button" id="tv" onclick="toggleDevice('tv')">TV</button>
+        
+        <div id="entranceSection" class="hidden">
+            <div class="camera-feed-container">
+                <div class="camera-status">Camera: Active</div>
+                <img id="cameraFeed" class="camera-feed" src="/api/placeholder/800/450" alt="Security Camera Feed">
+            </div>
+            <div class="camera-controls">
+                <button onclick="toggleCameraRecording()">
+                    <span id="recordingStatus">Start Recording</span>
+                </button>
+                <button onclick="captureSnapshot()">Capture Snapshot</button>
+            </div>
         </div>
+
+        <div id="standardRoomSection">
+            <div class="room-grid">
+                <button class="device-button" id="light" onclick="toggleDevice('light')">Light</button>
+                <button class="device-button" id="fan" onclick="toggleDevice('fan')">Fan</button>
+                <button class="device-button" id="ac" onclick="toggleDevice('ac')">AC</button>
+                <button class="device-button" id="tv" onclick="toggleDevice('tv')">TV</button>
+            </div>
+        </div>
+
         <div>
             <button onclick="goBack()">Back to Rooms</button>
             <button class="logout-btn" onclick="logout()">Logout</button>
