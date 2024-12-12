@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Home Controller</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="loginPage" class="container">
+        <h2>Smart Home Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div id="roomSelectionPage" class="container hidden">
+        <h2>Select Room</h2>
+        <div class="room-grid">
+            <button class="room-button" onclick="selectRoom('Living Room')">Living Room</button>
+            <button class="room-button" onclick="selectRoom('Bedroom')">Bedroom</button>
+            <button class="room-button" onclick="selectRoom('Kitchen')">Kitchen</button>
+            <button class="room-button" onclick="selectRoom('Bathroom')">Bathroom</button>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div id="deviceControlPage" class="container hidden">
+        <h2 id="currentRoomTitle"></h2>
+        <div class="room-grid">
+            <button class="device-button" id="light" onclick="toggleDevice('light')">Light</button>
+            <button class="device-button" id="fan" onclick="toggleDevice('fan')">Fan</button>
+            <button class="device-button" id="ac" onclick="toggleDevice('ac')">AC</button>
+            <button class="device-button" id="tv" onclick="toggleDevice('tv')">TV</button>
+        </div>
+        <div>
+            <button onclick="goBack()">Back to Rooms</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
