@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home Controller</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <div id="loginPage" class="container">
@@ -32,7 +32,7 @@
         <div id="entranceSection" class="hidden">
             <div class="camera-feed-container">
                 <div class="camera-status">Camera: Active</div>
-                <img id="cameraFeed" class="camera-feed" src="/api/placeholder/800/450" alt="Security Camera Feed">
+                <img id="cameraFeed" class="camera-feed" src="{{ url_for('static', filename='images/placeholder.jpg') }}" alt="Security Camera Feed">
             </div>
             <div class="camera-controls">
                 <button onclick="toggleCameraRecording()">
@@ -57,6 +57,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
