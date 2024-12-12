@@ -1,7 +1,75 @@
-from flask import Flask, render_template, request, jsonify, session
+import cv2
+import numpy as np
+from flask import Flask, render_template, request, jsonify, session,Response
 import secrets
 
+
+# from flask import Flask, render_template, Response
+import threading
+import base64
+
+class RTSPCamera:
+    def __init__(self, rtsp_url):
+        self.rtsp_url = rtsp_url
+        self.capture = None
+        self.thread = None
+        self.frame = None
+        self.is_running = False
+
+    def start(self):
+        self.is_running = True
+        self.thread = threading.Thread(target=self._stream_thread)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def stop(self):
+        self.is_running = False
+        if self.thread:
+            self.thread.join()
+        if self.capture:
+            self.capture.release()
+
+    def _stream_thread(self):
+        self.capture = cv2.VideoCapture(self.rtsp_url)
+        while self.is_running:
+            ret, frame = self.capture.read()
+            if ret:
+                # Resize frame if needed
+                frame = cv2.resize(frame, (640, 480))
+                self.frame = frame
+            else:
+                print("Failed to grab frame")
+                break
+
+    def get_frame(self):
+        if self.frame is not None:
+            # Encode frame to JPEG
+            ret, jpeg = cv2.imencode('.jpg', self.frame)
+            return jpeg.tobytes()
+        return None
+
+# Flask App Integration
 app = Flask(__name__)
+
+# Replace with your actual RTSP URL
+RTSP_URL = 'rtsp://username:password@ip_address:port/stream'
+camera = RTSPCamera(RTSP_URL)
+
+@app.route('/video_feed')
+def video_feed():
+    def generate_frames():
+        camera.start()
+        try:
+            while True:
+                frame = camera.get_frame()
+                if frame is not None:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        finally:
+            camera.stop()
+
+    return Response(generate_frames(), 
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 app.secret_key = secrets.token_hex(16)  # Secure secret key
 
 # Simulated user database
