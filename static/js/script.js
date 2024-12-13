@@ -41,6 +41,9 @@ function login() {
 
 // Logout function
 function logout() {
+    // Stop stream if it's active
+    stopStream();
+
     fetch('/logout', {
         method: 'POST'
     })
@@ -67,6 +70,13 @@ function logout() {
             // Reset camera
             isRecording = false;
             recordingStatusElement.textContent = 'Start Recording';
+            
+            // Reset camera feed to placeholder
+            cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+            
+            // Hide stream buttons
+            document.getElementById('startStreamBtn').style.display = 'block';
+            document.getElementById('stopStreamBtn').style.display = 'none';
         }
     });
 }
@@ -126,12 +136,21 @@ function captureSnapshot() {
     .then(data => {
         if (data.success) {
             alert('Snapshot captured and saved!');
+        } else {
+            alert('Failed to capture snapshot');
         }
+    })
+    .catch(error => {
+        console.error('Snapshot error:', error);
+        alert('Error capturing snapshot');
     });
 }
 
 // Go back to rooms function
 function goBack() {
+    // Stop stream if it's active
+    stopStream();
+    
     deviceControlPage.classList.add('hidden');
     roomSelectionPage.classList.remove('hidden');
 }
@@ -149,3 +168,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// [Previous script remains the same, with these modifications]
+
+function startStream() {
+    fetch('/camera/start_stream', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update image source to live stream with timestamp to prevent caching
+            cameraFeed.src = "/video_feed?t=" + new Date().getTime();
+            
+            // Add error listener to handle image load failures
+            cameraFeed.onerror = function() {
+                alert('Failed to load camera stream');
+                // Revert to placeholder
+                cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+                document.getElementById('startStreamBtn').style.display = 'block';
+                document.getElementById('stopStreamBtn').style.display = 'none';
+            };
+            
+            // Toggle button visibility
+            document.getElementById('startStreamBtn').style.display = 'none';
+            document.getElementById('stopStreamBtn').style.display = 'block';
+        } else {
+            alert('Failed to start stream: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error starting stream:', error);
+        alert('Failed to start stream. Check console for details.');
+    });
+}
+
+function stopStream() {
+    fetch('/camera/stop_stream', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reset camera feed to placeholder
+            cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+            
+            // Toggle button visibility
+            document.getElementById('startStreamBtn').style.display = 'block';
+            document.getElementById('stopStreamBtn').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping stream:', error);
+        alert('Failed to stop stream');
+    });
+}

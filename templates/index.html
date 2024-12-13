@@ -29,19 +29,6 @@
     <div id="deviceControlPage" class="container hidden">
         <h2 id="currentRoomTitle"></h2>
         
-        <div id="entranceSection" class="hidden">
-            <div class="camera-feed-container">
-                <div class="camera-status">Camera: Active</div>
-                <img id="cameraFeed" class="camera-feed" src="{{ url_for('static', filename='images/placeholder.jpg') }}" alt="Security Camera Feed">
-            </div>
-            <div class="camera-controls">
-                <button onclick="toggleCameraRecording()">
-                    <span id="recordingStatus">Start Recording</span>
-                </button>
-                <button onclick="captureSnapshot()">Capture Snapshot</button>
-            </div>
-        </div>
-
         <div id="standardRoomSection">
             <div class="room-grid">
                 <button class="device-button" id="light" onclick="toggleDevice('light')">Light</button>
@@ -57,6 +44,20 @@
         </div>
     </div>
 
+    <div id="entranceSection" class="hidden">
+        <div class="camera-feed-container">
+            <div class="camera-status">Camera: Active</div>
+            <img id="cameraFeed" class="camera-feed" src="{{ url_for('static', filename='images/placeholder.jpg') }}" alt="Security Camera Feed">
+        </div>
+        <div class="camera-controls">
+            <button id="startStreamBtn" onclick="startStream()">Start Stream</button>
+            <button id="stopStreamBtn" onclick="stopStream()" style="display:none;">Stop Stream</button>
+            <button onclick="toggleCameraRecording()">
+                <span id="recordingStatus">Start Recording</span>
+            </button>
+            <button onclick="captureSnapshot()">Capture Snapshot</button>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
