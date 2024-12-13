@@ -47,7 +47,7 @@
     <div id="entranceSection" class="hidden">
         <div class="camera-feed-container">
             <div class="camera-status">Camera: Active</div>
-            <img id="cameraFeed" class="camera-feed" src="{{ url_for('static', filename='images/placeholder.jpg') }}" alt="Security Camera Feed">
+            <img id="cameraFeed" class="camera-feed" src="{{ url_for('video_feed') }}" alt="Security Camera Feed">
         </div>
         <div class="camera-controls">
             <button id="startStreamBtn" onclick="startStream()">Start Stream</button>

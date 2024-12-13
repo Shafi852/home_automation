@@ -11,6 +11,7 @@ const cameraFeed = document.getElementById('cameraFeed');
 const recordingStatusElement = document.getElementById('recordingStatus');
 
 let isRecording = false;
+let streamLoadTimeout = null;
 
 // Login function
 function login() {
@@ -39,10 +40,45 @@ function login() {
     });
 }
 
+
+// Create a new RTCPeerConnection instance
+let pc = new RTCPeerConnection();
+
+// Function to send an offer request to the server
+async function createOffer() {
+    console.log("Sending offer request");
+
+    // Fetch the offer from the server
+    const offerResponse = await fetch("/offer", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            sdp: "",
+            type: "offer",
+        }),
+    });
+
+    // Parse the offer response
+    const offer = await offerResponse.json();
+    console.log("Received offer response:", offer);
+
+    // Set the remote description based on the received offer
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+    // Create an answer and set it as the local description
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+}
+
+// Trigger the process by creating and sending an offer
+createOffer();
+
 // Logout function
 function logout() {
     // Stop stream if it's active
-    stopStream();
+    // stopStream();
 
     fetch('/logout', {
         method: 'POST'
@@ -149,11 +185,84 @@ function captureSnapshot() {
 // Go back to rooms function
 function goBack() {
     // Stop stream if it's active
-    stopStream();
+    // stopStream();
     
     deviceControlPage.classList.add('hidden');
     roomSelectionPage.classList.remove('hidden');
 }
+
+// // Start stream function with improved error handling
+// function startStream() {
+//     fetch('/camera/start_stream', {
+//         method: 'POST',
+//         timeout: 10000  // 10-second timeout
+//     })
+//     .then(response => response.json())
+//     .then(data => {
+//         if (data.success) {
+//             const streamUrl = "/video_feed?t=" + new Date().getTime();
+            
+//             // Create a timeout to handle slow streams
+//             streamLoadTimeout = setTimeout(() => {
+//                 alert('Stream took too long to load');
+//                 stopStream();
+//             }, 15000);  // 15-second timeout
+
+//             cameraFeed.onload = function() {
+//                 if (streamLoadTimeout) {
+//                     clearTimeout(streamLoadTimeout);
+//                 }
+//             };
+
+//             cameraFeed.onerror = function() {
+//                 if (streamLoadTimeout) {
+//                     clearTimeout(streamLoadTimeout);
+//                 }
+//                 alert('Failed to load camera stream');
+//                 stopStream();
+//             };
+
+//             cameraFeed.src = streamUrl;
+            
+//             document.getElementById('startStreamBtn').style.display = 'none';
+//             document.getElementById('stopStreamBtn').style.display = 'block';
+//         } else {
+//             alert('Stream start failed: ' + (data.message || 'Unknown error'));
+//         }
+//     })
+//     .catch(error => {
+//         console.error('Stream start error:', error);
+//         alert('Stream initialization failed');
+//     });
+// }
+
+// // Stop stream function with improved cleanup
+// function stopStream() {
+//     // Clear any existing timeout
+//     if (streamLoadTimeout) {
+//         clearTimeout(streamLoadTimeout);
+//         streamLoadTimeout = null;
+//     }
+
+//     fetch('/camera/stop_stream', {
+//         method: 'POST'
+//     })
+//     .then(response => response.json())
+//     .then(data => {
+//         if (data.success) {
+//             // Reset camera feed to placeholder
+//             cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+            
+//             // Toggle button visibility
+//             document.getElementById('startStreamBtn').style.display = 'block';
+//             document.getElementById('stopStreamBtn').style.display = 'none';
+//         }
+//     })
+//     .catch(error => {
+//         console.error('Error stopping stream:', error);
+//         alert('Failed to stop stream');
+//     });
+// }
 
 // Setup login key press when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -168,58 +277,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
-
-// [Previous script remains the same, with these modifications]
-
-function startStream() {
-    fetch('/camera/start_stream', {
-        method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update image source to live stream with timestamp to prevent caching
-            cameraFeed.src = "/video_feed?t=" + new Date().getTime();
-            
-            // Add error listener to handle image load failures
-            cameraFeed.onerror = function() {
-                alert('Failed to load camera stream');
-                // Revert to placeholder
-                cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
-                document.getElementById('startStreamBtn').style.display = 'block';
-                document.getElementById('stopStreamBtn').style.display = 'none';
-            };
-            
-            // Toggle button visibility
-            document.getElementById('startStreamBtn').style.display = 'none';
-            document.getElementById('stopStreamBtn').style.display = 'block';
-        } else {
-            alert('Failed to start stream: ' + (data.message || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error starting stream:', error);
-        alert('Failed to start stream. Check console for details.');
-    });
-}
-
-function stopStream() {
-    fetch('/camera/stop_stream', {
-        method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Reset camera feed to placeholder
-            cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
-            
-            // Toggle button visibility
-            document.getElementById('startStreamBtn').style.display = 'block';
-            document.getElementById('stopStreamBtn').style.display = 'none';
-        }
-    })
-    .catch(error => {
-        console.error('Error stopping stream:', error);
-        alert('Failed to stop stream');
-    });
-}
