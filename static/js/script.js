@@ -12,6 +12,7 @@ const recordingStatusElement = document.getElementById('recordingStatus');
 
 let isRecording = false;
 let streamLoadTimeout = null;
+let currentRoom = null;
 
 // Login function
 function login() {
@@ -117,8 +118,9 @@ function logout() {
     });
 }
 
-// Select room function
+// Modify the selectRoom function to handle navigation correctly
 function selectRoom(room) {
+    currentRoom = room;
     currentRoomTitle.textContent = room;
     roomSelectionPage.classList.add('hidden');
     deviceControlPage.classList.remove('hidden');
@@ -182,15 +184,37 @@ function captureSnapshot() {
     });
 }
 
-// Go back to rooms function
+// Modify the goBack function to handle stream and navigation
 function goBack() {
-    // Stop stream if it's active
-    // stopStream();
-    
-    deviceControlPage.classList.add('hidden');
-    roomSelectionPage.classList.remove('hidden');
-}
+    // Stop camera stream if on Entrance page
+    if (currentRoom === 'Entrance') {
+        // Reset camera feed
+        cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+        
+        // Reset recording status
+        isRecording = false;
+        recordingStatusElement.textContent = 'Start Recording';
+        recordingStatusElement.parentElement.classList.remove('on');
+    }
 
+    // Reset room-specific states
+    const deviceButtons = document.querySelectorAll('.device-button');
+    deviceButtons.forEach(button => {
+        button.classList.remove('on');
+        button.classList.add('off');
+        button.textContent = button.id.toUpperCase();
+    });
+       // Hide current pages
+       deviceControlPage.classList.add('hidden');
+       entranceSection.classList.add('hidden');
+       standardRoomSection.classList.add('hidden');
+   
+       // Show room selection page
+       roomSelectionPage.classList.remove('hidden');
+   
+       // Reset current room
+       currentRoom = null;
+   }
 // // Start stream function with improved error handling
 // function startStream() {
 //     fetch('/camera/start_stream', {
@@ -276,4 +300,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+});
+
+// Additional safety measure for navigation
+window.addEventListener('popstate', function() {
+    // If somehow stuck on a page, return to room selection
+    if (!roomSelectionPage.classList.contains('hidden')) return;
+    
+    goBack();
 });
