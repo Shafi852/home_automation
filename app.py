@@ -130,9 +130,11 @@ logging.basicConfig(level=logging.DEBUG,
 
 # Add this at the top of the file, outside any function
 is_streaming = False
+buffer = 0
 
 def generate_frames():
     global is_streaming
+    global buffer
     camera = cv2.VideoCapture('rtsp://127.0.0.1:8554/stream')
     try:
         while is_streaming:
@@ -237,25 +239,38 @@ def logout():
 
 @app.route('/camera/snapshot', methods=['POST'])
 def capture_snapshot():
+    global buffer
     try:
-        current_frame = camera.get_frame()
-        if current_frame:
+        if buffer is not None:
+            # Decode the encoded buffer back into a raw frame
+            frame = cv2.imdecode(np.frombuffer(buffer, np.uint8), cv2.IMREAD_COLOR)
+            
+            # Ensure the decoded frame is valid
+            if frame is None or frame.size == 0:
+                raise ValueError("Decoded frame is invalid or empty")
+
+            # Save the raw frame as an image
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            filename = f'snapshot_{timestamp}.jpg'
+            cv2.imwrite(filename, frame)
+            
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': 'Snapshot captured',
-                'timestamp': time.strftime("%Y%m%d-%H%M%S")
+                'filename': filename
             })
         else:
             return jsonify({
-                'success': False, 
-                'message': 'Failed to capture snapshot'
+                'success': False,
+                'message': 'No valid frame available for snapshot'
             }), 400
     except Exception as e:
         logging.error(f"Snapshot error: {e}")
         return jsonify({
-            'success': False, 
+            'success': False,
             'message': str(e)
         }), 500
+
 
 @app.route('/camera/toggle_recording', methods=['POST'])
 def toggle_recording():
