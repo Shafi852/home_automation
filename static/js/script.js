@@ -109,7 +109,7 @@ function logout() {
             recordingStatusElement.textContent = 'Start Recording';
             
             // Reset camera feed to placeholder
-            cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+            // cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
             
             // Hide stream buttons
             document.getElementById('startStreamBtn').style.display = 'block';
@@ -189,7 +189,7 @@ function goBack() {
     // Stop camera stream if on Entrance page
     if (currentRoom === 'Entrance') {
         // Reset camera feed
-        cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+        // cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
         
         // Reset recording status
         isRecording = false;
@@ -288,6 +288,85 @@ function goBack() {
 //     });
 // }
 
+function stopStream() {
+    // Clear any existing timeout
+    if (streamLoadTimeout) {
+        clearTimeout(streamLoadTimeout);
+        streamLoadTimeout = null;
+    }
+
+    fetch('/camera/stop_stream', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reset camera feed
+            cameraFeed.src = ''; // Clear the source
+            
+            // Remove any error event listener to prevent repeated error messages
+            cameraFeed.onerror = null;
+            
+            // Toggle button visibility
+            document.getElementById('startStreamBtn').style.display = 'block';
+            document.getElementById('stopStreamBtn').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error stopping stream:', error);
+    });
+}
+
+// Modify the startStream function to handle potential errors
+function startStream() {
+    fetch('/camera/start_stream', {
+        method: 'POST',
+        timeout: 10000  // 10-second timeout
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const streamUrl = "/video_feed?t=" + new Date().getTime();
+            
+            // Reset any previous error handlers
+            cameraFeed.onerror = null;
+            
+            // Create a timeout to handle slow streams
+            streamLoadTimeout = setTimeout(() => {
+                alert('Stream took too long to load');
+                stopStream();
+            }, 15000);  // 15-second timeout
+
+            cameraFeed.onload = function() {
+                if (streamLoadTimeout) {
+                    clearTimeout(streamLoadTimeout);
+                }
+            };
+
+            cameraFeed.onerror = function(e) {
+                if (streamLoadTimeout) {
+                    clearTimeout(streamLoadTimeout);
+                }
+                // Only show error if streaming was intended to be active
+                if (document.getElementById('stopStreamBtn').style.display === 'block') {
+                    console.error('Stream loading error:', e);
+                    stopStream();
+                }
+            };
+
+            cameraFeed.src = streamUrl;
+            
+            document.getElementById('startStreamBtn').style.display = 'none';
+            document.getElementById('stopStreamBtn').style.display = 'block';
+        } else {
+            alert('Stream start failed: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Stream start error:', error);
+        alert('Stream initialization failed');
+    });
+}
 // Setup login key press when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     const loginInputs = [usernameInput, passwordInput];

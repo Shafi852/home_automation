@@ -128,15 +128,21 @@ logging.basicConfig(level=logging.DEBUG,
 #             logging.error(f"Error getting frame: {e}")
 #             return None
 
+# Add this at the top of the file, outside any function
+is_streaming = False
 
 def generate_frames():
+    global is_streaming
     camera = cv2.VideoCapture('rtsp://127.0.0.1:8554/stream')
-    while True:
-        start_time = time.time()
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
+    try:
+        while is_streaming:
+            start_time = time.time()
+            success, frame = camera.read()
+            if not success:
+                # If no frame is read, wait a bit before continuing
+                time.sleep(0.1)
+                continue
+            
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             # Concatenate frame and yield for streaming
@@ -144,6 +150,11 @@ def generate_frames():
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n') 
             elapsed_time = time.time() - start_time
             logging.debug(f"Frame generation time: {elapsed_time} seconds")
+    except Exception as e:
+        logging.error(f"Error in frame generation: {e}")
+    finally:
+        camera.release()
+        is_streaming = False
 
 # Flask App Integration
 app = Flask(__name__)
@@ -252,18 +263,16 @@ def toggle_recording():
         'success': True, 
         'recording': True
     })
-
 @app.route('/camera/start_stream', methods=['POST'])
 def start_stream():
-    success = camera.start()
-    if success:
-        return jsonify({'success': True, 'message': 'Stream started'})
-    else:
-        return jsonify({'success': False, 'message': 'Failed to start stream'}), 500
+    global is_streaming
+    is_streaming = True
+    return jsonify({'success': True, 'message': 'Stream started'})
 
 @app.route('/camera/stop_stream', methods=['POST'])
 def stop_stream():
-    camera.stop()
+    global is_streaming
+    is_streaming = False
     return jsonify({'success': True, 'message': 'Stream stopped'})
 
 if __name__ == '__main__':
