@@ -132,26 +132,33 @@ logging.basicConfig(level=logging.DEBUG,
 is_streaming = False
 buffer = 0
 
+is_recording = False
+video_writer = None
+recording_file_name = None
+
+
 def generate_frames():
-    global is_streaming
-    global buffer
+    global is_streaming, buffer, is_recording, video_writer
+
     camera = cv2.VideoCapture('rtsp://127.0.0.1:8554/stream')
     try:
         while is_streaming:
-            start_time = time.time()
             success, frame = camera.read()
             if not success:
-                # If no frame is read, wait a bit before continuing
                 time.sleep(0.1)
                 continue
-            
+
+            # Encode the frame to JPEG for streaming
             ret, buffer = cv2.imencode('.jpg', frame)
+
+            # If recording, write the frame to the video file
+            if is_recording and video_writer is not None:
+                video_writer.write(frame)
+
+            # Send the frame to the client
             frame = buffer.tobytes()
-            # Concatenate frame and yield for streaming
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n') 
-            elapsed_time = time.time() - start_time
-            logging.debug(f"Frame generation time: {elapsed_time} seconds")
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     except Exception as e:
         logging.error(f"Error in frame generation: {e}")
     finally:
@@ -272,12 +279,54 @@ def capture_snapshot():
         }), 500
 
 
-@app.route('/camera/toggle_recording', methods=['POST'])
-def toggle_recording():
-    return jsonify({
-        'success': True, 
-        'recording': True
-    })
+@app.route('/camera/start_recording', methods=['POST'])
+def start_recording():
+    global is_recording, video_writer, recording_file_name
+
+    if is_recording:
+        return jsonify({'success': False, 'message': 'Recording is already in progress'}), 400
+
+    try:
+        # Generate a unique file name
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        recording_file_name = f'recording_{timestamp}.avi'
+
+        # Define video codec and create VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Change codec as needed (e.g., 'MP4V' for .mp4)
+        frame_width = 640
+        frame_height = 480
+        fps = 30
+
+        video_writer = cv2.VideoWriter(recording_file_name, fourcc, fps, (frame_width, frame_height))
+        is_recording = True
+
+        return jsonify({'success': True, 'message': 'Recording started', 'file_name': recording_file_name})
+    except Exception as e:
+        logging.error(f"Error starting recording: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+    
+@app.route('/camera/stop_recording', methods=['POST'])
+def stop_recording():
+    global is_recording, video_writer, recording_file_name
+
+    if not is_recording:
+        return jsonify({'success': False, 'message': 'No recording in progress'}), 400
+
+    try:
+        # Release the VideoWriter object
+        if video_writer is not None:
+            video_writer.release()
+
+        is_recording = False
+        file_name = recording_file_name
+        recording_file_name = None
+
+        return jsonify({'success': True, 'message': 'Recording stopped', 'file_name': file_name})
+    except Exception as e:
+        logging.error(f"Error stopping recording: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @app.route('/camera/start_stream', methods=['POST'])
 def start_stream():
     global is_streaming

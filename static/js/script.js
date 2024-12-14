@@ -147,7 +147,8 @@ function toggleDevice(deviceId) {
 
 // Toggle camera recording
 function toggleCameraRecording() {
-    fetch('/camera/toggle_recording', {
+    if(!isRecording){
+    fetch('/camera/start_recording', {
         method: 'POST'
     })
     .then(response => response.json())
@@ -163,6 +164,25 @@ function toggleCameraRecording() {
             }
         }
     });
+}
+else if (isRecording){
+    fetch('/camera/stop_recording', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            isRecording = !isRecording;
+            if (isRecording) {
+                recordingStatusElement.textContent = 'Stop Recording';
+                recordingStatusElement.parentElement.classList.add('on');
+            } else {
+                recordingStatusElement.textContent = 'Start Recording';
+                recordingStatusElement.parentElement.classList.remove('on');
+            }
+        }
+    });
+}
 }
 
 // Capture snapshot
