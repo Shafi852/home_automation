@@ -76,22 +76,20 @@ async function createOffer() {
 // Trigger the process by creating and sending an offer
 createOffer();
 
-// Logout function
 function logout() {
-    // Stop stream if it's active
-    // stopStream();
-
     fetch('/logout', {
         method: 'POST'
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Reset pages
+            // Reset visibility of all pages
             loginPage.classList.remove('hidden');
             roomSelectionPage.classList.add('hidden');
             deviceControlPage.classList.add('hidden');
-
+            entranceSection.classList.add('hidden');
+            standardRoomSection.classList.add('hidden');
+            
             // Clear input fields
             usernameInput.value = '';
             passwordInput.value = '';
@@ -104,17 +102,27 @@ function logout() {
                 button.textContent = button.id.toUpperCase();
             });
 
-            // Reset camera
+            // Reset camera state
             isRecording = false;
             recordingStatusElement.textContent = 'Start Recording';
-            
+            recordingStatusElement.parentElement.classList.remove('on');
+
+            // Reset current room
+            currentRoom = null;
+
             // Reset camera feed to placeholder
-            // cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+            cameraFeed.src = ''; // Clear the feed or point to a placeholder image
             
             // Hide stream buttons
             document.getElementById('startStreamBtn').style.display = 'block';
             document.getElementById('stopStreamBtn').style.display = 'none';
+        } else {
+            alert('Logout failed. Please try again.');
         }
+    })
+    .catch(error => {
+        console.error('Error during logout:', error);
+        alert('An error occurred while logging out.');
     });
 }
 
