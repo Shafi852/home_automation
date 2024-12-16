@@ -13,6 +13,24 @@ const recordingStatusElement = document.getElementById('recordingStatus');
 let isRecording = false;
 let streamLoadTimeout = null;
 let currentRoom = null;
+let socket = io();
+
+// Add WebSocket event listener for device updates
+socket.on('device_update', function(data) {
+    const deviceElement = document.getElementById(data.device);
+    
+    if (deviceElement) {
+        if (data.state) {
+            deviceElement.classList.remove('off');
+            deviceElement.classList.add('on');
+            deviceElement.textContent = `${data.device.toUpperCase()} ON`;
+        } else {
+            deviceElement.classList.remove('on');
+            deviceElement.classList.add('off');
+            deviceElement.textContent = `${data.device.toUpperCase()} OFF`;
+        }
+    }
+});
 
 // Login function
 function login() {

@@ -10,9 +10,24 @@ import sys
 from flask import send_from_directory
 import uuid
 import asyncio
+from flask_socketio import SocketIO, emit
 
-# TODO: ADD A SIMPLE JSON HERE FOR DEVICE STATE
-# TODO: TAKE UPDATE FOR SWITCHES FROM A ROUTE AND UPDATE USING SOCKET.IO FOR DYNAMIC BUTTON CHANGE
+
+# Flask App Integration
+app = Flask(__name__)
+app.config['SECRET_KEY'] = secrets.token_hex(16)
+
+# Disable caching for video stream
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+# Previous imports remain the same, adding Flask-SocketIO
+
+# Global Variables for Device States
+device_states = {
+    'light': False,
+    'fan': False,
+    'ac': False,
+    'tv': False
+}
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
@@ -21,6 +36,35 @@ logging.basicConfig(level=logging.DEBUG,
                         logging.StreamHandler(sys.stdout),
                         logging.FileHandler('webcam_app.log')
                     ])
+
+# Rest of the previous app.py code...
+
+# Add new route for device control
+@app.route('/<room>/<device>/<action>', methods=['GET'])
+def control_device(room, device, action):
+    global device_states
+    
+    # Validate device
+    if device not in device_states:
+        return jsonify({'success': False, 'message': 'Invalid device'}), 400
+    
+    # Update device state
+    device_states[device] = (action == 'on')
+    
+    # Emit WebSocket event to update client
+    socketio.emit('device_update', {
+        'device': device, 
+        'state': device_states[device]
+    })
+    
+    return jsonify({
+        'success': True, 
+        'message': f'{device.upper()} turned {action}'
+    })
+
+# Initialize SocketIO
+socketio = SocketIO(app)
+
 #Global Varaibles for States 
 is_streaming = False
 buffer = 0
@@ -57,21 +101,7 @@ def generate_frames():
         camera.release()
         is_streaming = False
 
-# Flask App Integration
-app = Flask(__name__)
-app.config['SECRET_KEY'] = secrets.token_hex(16)
 
-# Disable caching for video stream
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-
-# Allow RTSP stream URL configuration
-# RTSP_STREAM_URL = 'rtsp://127.0.0.1:8554/stream'  # Replace with your RTSP URL if needed
-# camera = WebCamera(RTSP_STREAM_URL)
-
-@app.route('update_switch', method= ['POST'])
-def update_switch():
-
-    return Response(200)
 
 @app.route('/video_feed')
 def video_feed():
