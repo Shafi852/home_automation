@@ -12,6 +12,10 @@ import uuid
 import asyncio
 
 
+# MongoDB Configuration
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/home_automation'
+mongo = PyMongo(app)
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -20,115 +24,6 @@ logging.basicConfig(level=logging.DEBUG,
                         logging.FileHandler('webcam_app.log')
                     ])
 
-# class WebCamera:
-#     def __init__(self, stream_url=None):
-#         self.stream_url = stream_url or 0
-#         self.capture = None
-#         self.thread = None
-#         self.frame = None
-#         self.is_running = False
-#         self.lock = threading.Lock()
-#         self.reconnect_interval = 5  # Seconds between reconnection attempts
-
-#     def start(self):
-#         try:
-#             # Use different capture backends for more robust streaming
-#             capture_backends = [
-#                 cv2.CAP_FFMPEG,   # Recommended for network streams
-#                 cv2.CAP_GSTREAMER,
-#                 cv2.CAP_V4L2,     # Linux video capture
-#                 cv2.CAP_DSHOW     # Windows DirectShow
-#             ]
-
-#             for backend in capture_backends:
-#                 try:
-#                     self.capture = cv2.VideoCapture(self.stream_url, backend)
-                    
-#                     # Additional timeout and parameter settings
-#                     self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 3)
-                    
-#                     # Use read with timeout for verification
-#                     ret, _ = self.capture.read()
-#                     if ret:
-#                         break
-#                 except Exception as backend_err:
-#                     logging.warning(f"Backend {backend} failed: {backend_err}")
-
-#             if not self.capture or not self.capture.isOpened():
-#                 logging.error(f"Failed to open stream with any backend: {self.stream_url}")
-#                 return False
-
-#             # Configure capture properties
-#             self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-#             self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-#             self.is_running = True
-#             self.thread = threading.Thread(target=self._stream_thread, daemon=True)
-#             self.thread.start()
-#             return True
-
-#         except Exception as e:
-#             logging.error(f"Stream initialization error: {e}")
-#             return False
-
-#     def _stream_thread(self):
-#         consecutive_errors = 0
-#         max_consecutive_errors = 5
-
-#         while self.is_running:
-#             try:
-#                 if not self.capture or not self.capture.isOpened():
-#                     logging.warning("Attempting to reconnect to stream...")
-#                     self.capture = cv2.VideoCapture(self.stream_url)
-#                     if not self.capture.isOpened():
-#                         consecutive_errors += 1
-#                         time.sleep(self.reconnect_interval)
-#                         continue
-
-#                 ret, frame = self.capture.read()
-#                 if not ret:
-#                     consecutive_errors += 1
-#                     logging.warning(f"Frame read failed (attempts: {consecutive_errors})")
-                    
-#                     if consecutive_errors >= max_consecutive_errors:
-#                         logging.critical("Maximum reconnection attempts exceeded")
-#                         break
-                    
-#                     time.sleep(1)
-#                     continue
-
-#                 consecutive_errors = 0
-
-#                 # Process frame
-#                 frame = cv2.flip(frame, 1)
-#                 frame = cv2.resize(frame, (640, 480))
-                
-#                 with self.lock:
-#                     self.frame = frame
-
-#                 time.sleep(0.01)
-
-#             except Exception as e:
-#                 logging.error(f"Stream thread error: {e}")
-#                 break
-
-#         self.is_running = False
-#         logging.info("Camera stream thread ended")
-
-#     def get_frame(self):
-#         try:
-#             with self.lock:
-#                 if self.frame is not None:
-#                     # Encode frame to JPEG
-#                     ret, jpeg = cv2.imencode('.jpg', self.frame)
-#                     if ret:
-#                         return jpeg.tobytes()
-#             return None
-#         except Exception as e:
-#             logging.error(f"Error getting frame: {e}")
-#             return None
-
-# Add this at the top of the file, outside any function
 is_streaming = False
 buffer = 0
 
@@ -175,6 +70,11 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Allow RTSP stream URL configuration
 # RTSP_STREAM_URL = 'rtsp://127.0.0.1:8554/stream'  # Replace with your RTSP URL if needed
 # camera = WebCamera(RTSP_STREAM_URL)
+
+@app.route('update_switch', method= ['POST'])
+def update_switch():
+
+    return Response(200)
 
 @app.route('/video_feed')
 def video_feed():
