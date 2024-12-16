@@ -42,7 +42,7 @@ async def process_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     # Your Telegram bot token
-    API_TOKEN = '7982507594:AAEiFot9G4AdzIsJJ8ZAPEi9nXYvQxLIVRA'
+    API_TOKEN = 'Your bot token here'
 
     application = Application.builder().token(API_TOKEN).build()
 

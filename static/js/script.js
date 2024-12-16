@@ -52,7 +52,7 @@ socket.on('device_update', function(data) {
     // Convert room from server format to UI format
     const uiRoomName = data.room.charAt(0).toUpperCase() + data.room.slice(1);
     console.log(uiRoomName);
-    
+
     // Check if the update is for any room
     if (roomDeviceStates[uiRoomName]) {
         // Update device state in roomDeviceStates
@@ -61,7 +61,7 @@ socket.on('device_update', function(data) {
         // If the update is for the current room, update UI
         if (currentRoom === uiRoomName) {
             const deviceElement = document.getElementById(data.device);
-            
+
             if (deviceElement) {
                 if (data.state) {
                     deviceElement.classList.remove('off');
@@ -151,7 +151,7 @@ function logout() {
             deviceControlPage.classList.add('hidden');
             entranceSection.classList.add('hidden');
             standardRoomSection.classList.add('hidden');
-            
+
             // Clear input fields
             usernameInput.value = '';
             passwordInput.value = '';
@@ -172,7 +172,7 @@ function logout() {
             currentRoom = null;
 
             // Reset camera feed to placeholder
-            cameraFeed.src = ''; 
+            cameraFeed.src = '';
 
             // Hide stream buttons
             document.getElementById('startStreamBtn').style.display = 'block';
@@ -202,7 +202,7 @@ function selectRoom(room) {
     deviceButtons.forEach(button => {
         const deviceId = button.id;
         const deviceState = roomDeviceStates[room][deviceId];
-        
+
         button.classList.remove('on', 'off');
         if (deviceState) {
             button.classList.add('on');
@@ -223,14 +223,11 @@ function selectRoom(room) {
     }
 }
 
-
-// Toggle device function
-// Modify toggleDevice function to use room-specific device states
 // Toggle device function
 function toggleDevice(deviceId) {
     const device = document.getElementById(deviceId);
     const newState = !device.classList.contains('on');
-    
+
     // Send request to server with room information
     fetch(`/${currentRoom.toLowerCase().replace(' ', '')}/${deviceId}/${newState ? 'on' : 'off'}`, {
         method: 'GET'
@@ -248,7 +245,7 @@ function toggleDevice(deviceId) {
                 device.classList.add('off');
                 device.textContent = `${deviceId.toUpperCase()} OFF`;
             }
-            
+
             // Update local state
             roomDeviceStates[currentRoom][deviceId] = newState;
         }
@@ -322,7 +319,7 @@ function goBack() {
     if (currentRoom === 'Entrance') {
         // Reset camera feed
         // cameraFeed.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
-        
+
         // Reset recording status
         isRecording = false;
         recordingStatusElement.textContent = 'Start Recording';
@@ -340,10 +337,10 @@ function goBack() {
        deviceControlPage.classList.add('hidden');
        entranceSection.classList.add('hidden');
        standardRoomSection.classList.add('hidden');
-   
+
        // Show room selection page
        roomSelectionPage.classList.remove('hidden');
-   
+
        // Reset current room
        currentRoom = null;
    }
@@ -364,10 +361,10 @@ function stopStream() {
         if (data.success) {
             // Reset camera feed
             cameraFeed.src = ''; // Clear the source
-            
+
             // Remove any error event listener to prevent repeated error messages
             cameraFeed.onerror = null;
-            
+
             // Toggle button visibility
             document.getElementById('startStreamBtn').style.display = 'block';
             document.getElementById('stopStreamBtn').style.display = 'none';
@@ -388,10 +385,10 @@ function startStream() {
     .then(data => {
         if (data.success) {
             const streamUrl = "/video_feed?t=" + new Date().getTime();
-            
+
             // Reset any previous error handlers
             cameraFeed.onerror = null;
-            
+
             // Create a timeout to handle slow streams
             streamLoadTimeout = setTimeout(() => {
                 alert('Stream took too long to load');
@@ -416,7 +413,7 @@ function startStream() {
             };
 
             cameraFeed.src = streamUrl;
-            
+
             document.getElementById('startStreamBtn').style.display = 'none';
             document.getElementById('stopStreamBtn').style.display = 'block';
         } else {
@@ -431,7 +428,7 @@ function startStream() {
 // Setup login key press when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     const loginInputs = [usernameInput, passwordInput];
-    
+
     loginInputs.forEach(input => {
         input.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
@@ -446,6 +443,6 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('popstate', function() {
     // If somehow stuck on a page, return to room selection
     if (!roomSelectionPage.classList.contains('hidden')) return;
-    
+
     goBack();
 });
