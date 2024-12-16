@@ -11,10 +11,8 @@ from flask import send_from_directory
 import uuid
 import asyncio
 
-
-# MongoDB Configuration
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/home_automation'
-mongo = PyMongo(app)
+# TODO: ADD A SIMPLE JSON HERE FOR DEVICE STATE
+# TODO: TAKE UPDATE FOR SWITCHES FROM A ROUTE AND UPDATE USING SOCKET.IO FOR DYNAMIC BUTTON CHANGE
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
@@ -23,10 +21,9 @@ logging.basicConfig(level=logging.DEBUG,
                         logging.StreamHandler(sys.stdout),
                         logging.FileHandler('webcam_app.log')
                     ])
-
+#Global Varaibles for States 
 is_streaming = False
 buffer = 0
-
 is_recording = False
 video_writer = None
 recording_file_name = None
