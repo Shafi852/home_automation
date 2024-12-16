@@ -10,28 +10,72 @@ const standardRoomSection = document.getElementById('standardRoomSection');
 const cameraFeed = document.getElementById('cameraFeed');
 const recordingStatusElement = document.getElementById('recordingStatus');
 
+// Initialize room device states
+const roomDeviceStates = {
+    'Livingroom': {
+        'light': false,
+        'fan': false,
+        'ac': false,
+        'tv': false
+    },
+    'Bedroom': {
+        'light': false,
+        'fan': false,
+        'ac': false,
+        'tv': false
+    },
+    'Kitchen': {
+        'light': false,
+        'fan': false,
+        'ac': false,
+        'tv': false
+    },
+    'Bathroom': {
+        'light': false,
+        'fan': false,
+        'ac': false,
+        'tv': false
+    },
+    'Entrance': {
+        'light': false,
+        'fan': false,
+        'ac': false,
+        'tv': false
+    }
+};
+
 let isRecording = false;
 let streamLoadTimeout = null;
 let currentRoom = null;
 let socket = io();
-
-// Add WebSocket event listener for device updates
 socket.on('device_update', function(data) {
-    const deviceElement = document.getElementById(data.device);
+    // Convert room from server format to UI format
+    const uiRoomName = data.room.charAt(0).toUpperCase() + data.room.slice(1);
+    console.log(uiRoomName);
     
-    if (deviceElement) {
-        if (data.state) {
-            deviceElement.classList.remove('off');
-            deviceElement.classList.add('on');
-            deviceElement.textContent = `${data.device.toUpperCase()} ON`;
-        } else {
-            deviceElement.classList.remove('on');
-            deviceElement.classList.add('off');
-            deviceElement.textContent = `${data.device.toUpperCase()} OFF`;
+    // Check if the update is for any room
+    if (roomDeviceStates[uiRoomName]) {
+        // Update device state in roomDeviceStates
+        roomDeviceStates[uiRoomName][data.device] = data.state;
+
+        // If the update is for the current room, update UI
+        if (currentRoom === uiRoomName) {
+            const deviceElement = document.getElementById(data.device);
+            
+            if (deviceElement) {
+                if (data.state) {
+                    deviceElement.classList.remove('off');
+                    deviceElement.classList.add('on');
+                    deviceElement.textContent = `${data.device.toUpperCase()} ON`;
+                } else {
+                    deviceElement.classList.remove('on');
+                    deviceElement.classList.add('off');
+                    deviceElement.textContent = `${data.device.toUpperCase()} OFF`;
+                }
+            }
         }
     }
 });
-
 // Login function
 function login() {
     const username = usernameInput.value;
@@ -113,11 +157,10 @@ function logout() {
             passwordInput.value = '';
 
             // Reset device states
-            const deviceButtons = document.querySelectorAll('.device-button');
-            deviceButtons.forEach(button => {
-                button.classList.remove('on');
-                button.classList.add('off');
-                button.textContent = button.id.toUpperCase();
+            Object.keys(roomDeviceStates).forEach(room => {
+                Object.keys(roomDeviceStates[room]).forEach(device => {
+                    roomDeviceStates[room][device] = false;
+                });
             });
 
             // Reset camera state
@@ -129,8 +172,8 @@ function logout() {
             currentRoom = null;
 
             // Reset camera feed to placeholder
-            cameraFeed.src = ''; // Clear the feed or point to a placeholder image
-            
+            cameraFeed.src = ''; 
+
             // Hide stream buttons
             document.getElementById('startStreamBtn').style.display = 'block';
             document.getElementById('stopStreamBtn').style.display = 'none';
@@ -144,12 +187,31 @@ function logout() {
     });
 }
 
+
 // Modify the selectRoom function to handle navigation correctly
+// Modify selectRoom function to restore room-specific device states
+// Select Room function
 function selectRoom(room) {
     currentRoom = room;
     currentRoomTitle.textContent = room;
     roomSelectionPage.classList.add('hidden');
     deviceControlPage.classList.remove('hidden');
+
+    // Restore device states for the current room
+    const deviceButtons = document.querySelectorAll('.device-button');
+    deviceButtons.forEach(button => {
+        const deviceId = button.id;
+        const deviceState = roomDeviceStates[room][deviceId];
+        
+        button.classList.remove('on', 'off');
+        if (deviceState) {
+            button.classList.add('on');
+            button.textContent = `${deviceId.toUpperCase()} ON`;
+        } else {
+            button.classList.add('off');
+            button.textContent = `${deviceId.toUpperCase()} OFF`;
+        }
+    });
 
     // Special handling for Entrance
     if (room === 'Entrance') {
@@ -161,16 +223,40 @@ function selectRoom(room) {
     }
 }
 
+
+// Toggle device function
+// Modify toggleDevice function to use room-specific device states
 // Toggle device function
 function toggleDevice(deviceId) {
     const device = document.getElementById(deviceId);
-    device.classList.toggle('on');
-    device.classList.toggle('off');
-    device.textContent = device.classList.contains('on') ? 
-        `${deviceId.toUpperCase()} ON` : 
-        `${deviceId.toUpperCase()} OFF`;
+    const newState = !device.classList.contains('on');
+    
+    // Send request to server with room information
+    fetch(`/${currentRoom.toLowerCase().replace(' ', '')}/${deviceId}/${newState ? 'on' : 'off'}`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Optimistically update the UI
+            if (newState) {
+                device.classList.remove('off');
+                device.classList.add('on');
+                device.textContent = `${deviceId.toUpperCase()} ON`;
+            } else {
+                device.classList.remove('on');
+                device.classList.add('off');
+                device.textContent = `${deviceId.toUpperCase()} OFF`;
+            }
+            
+            // Update local state
+            roomDeviceStates[currentRoom][deviceId] = newState;
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling device:', error);
+    });
 }
-
 // Toggle camera recording
 function toggleCameraRecording() {
     if(!isRecording){

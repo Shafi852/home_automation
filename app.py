@@ -23,12 +23,11 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Global Variables for Device States
 device_states = {
-    'light': False,
-    'fan': False,
-    'ac': False,
-    'tv': False
+    'livingroom': {'light': False, 'fan': False, 'ac': False, 'tv': False},
+    'bedroom': {'light': False, 'fan': False, 'ac': False, 'tv': False},
+    'kitchen': {'light': False, 'fan': False, 'ac': False, 'tv': False},
+    'bathroom': {'light': False, 'fan': False, 'ac': False, 'tv': False}
 }
-
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
                     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -39,27 +38,27 @@ logging.basicConfig(level=logging.DEBUG,
 
 # Rest of the previous app.py code...
 
-# Add new route for device control
 @app.route('/<room>/<device>/<action>', methods=['GET'])
 def control_device(room, device, action):
     global device_states
     
-    # Validate device
-    if device not in device_states:
-        return jsonify({'success': False, 'message': 'Invalid device'}), 400
+    # Validate room and device
+    if room not in device_states or device not in device_states[room]:
+        return jsonify({'success': False, 'message': 'Invalid room or device'}), 400
     
     # Update device state
-    device_states[device] = (action == 'on')
+    device_states[room][device] = (action == 'on')
     
     # Emit WebSocket event to update client
     socketio.emit('device_update', {
+        'room': room, 
         'device': device, 
-        'state': device_states[device]
+        'state': device_states[room][device]
     })
     
     return jsonify({
         'success': True, 
-        'message': f'{device.upper()} turned {action}'
+        'message': f'{device.upper()} turned {action} in {room}'
     })
 
 # Initialize SocketIO
